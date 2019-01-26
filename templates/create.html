@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script type='text/javascript' src='https://cdn.scaledrone.com/scaledrone.min.js'></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <style>
+    body {
+      display: flex;
+      height: 100vh;
+      margin: 0;
+      align-items: center;
+      justify-content: center;
+      padding: 0 50px;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    video {
+      max-width: calc(50% - 100px);
+      margin: 0 50px;
+      box-sizing: border-box;
+      border-radius: 2px;
+      padding: 0;
+      box-shadow: rgba(156, 172, 172, 0.2) 0px 2px 2px, rgba(156, 172, 172, 0.2) 0px 4px 4px, rgba(156, 172, 172, 0.2) 0px 8px 8px, rgba(156, 172, 172, 0.2) 0px 16px 16px, rgba(156, 172, 172, 0.2) 0px 32px 32px, rgba(156, 172, 172, 0.2) 0px 64px 64px;
+    }
+    .copy {
+      position: fixed;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 16px;
+      color: rgba(0, 0, 0, 0.5);
+    }
+  </style>
+</head>
+<body>
+  <div class="copy">video call</div>
+  <video id="local_video" autoplay muted></video>
+  <video id="remote_video" autoplay></video>
+  <script>
+
+    function signallingChannel_send(massage, id, type) {
+        var xhr = new XMLHttpRequest();
+        var inp = "/channel/send/" + id + "/" + type;
+        xhr.open('POST', inp, true);
+        xhr.send(massage);
+    }
+
+    var local_video = document.getElementById('local_video');
+    var remote_video = document.getElementById('remote_video');
+
+    var ice = {
+        'iceServers': [
+            {'urls': 'stun:stun.services.mozilla.com'},
+            {'urls': 'stun:stun.l.google.com:19302'}
+            // {
+            //     'urls': 'turn:turn.sadegh.click:3478?transport=udp',
+            //     'credential': 'PASSWORD',
+            //     'username': 'sadegh'
+            //
+            // },
+        ]
+    };
+
+    var signalingChannel = new EventSource("/stream?channel=" + "{{name}}");
+
+    var peerConnection = new RTCPeerConnection(ice);
+    
+	if (navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({video: true}).then(gotStream).catch(errorHandler);
+    } else {
+        alert('API err');
+    }
+
+    peerConnection.ontrack = gotRemoteStream;
+    peerConnection.onicecandidate = gotIceCandidate;
+
+
+    
+    function gotStream(stream) {
+        console.log("gotStream");
+        localStream = stream;
+        try {
+            local_video.srcObject = stream;
+        } catch (error) {
+            local_video.src = window.URL.createObjectURL(stream);
+        }
+        peerConnection.onaddstream = gotRemoteStream;
+        peerConnection.addStream(localStream);
+    }
+
+    function gotRemoteStream(event) {
+        try {
+            remote_video.srcObject = event.stream;
+        } catch (error) {
+            remote_video.src = window.URL.createObjectURL(event.stream);
+        }
+    }
+
+    function gotIceCandidate(event) {
+        console.log("got ice candidate");
+        if (event.candidate != null) {
+            signallingChannel_send(JSON.stringify({'ice': event.candidate}), "{{name}}", 'ice2');
+
+        }
+    }
+
+
+    signalingChannel.addEventListener('request', gotRequest);
+
+    function gotRequest(event) {
+        console.log("got request");
+        var data = JSON.parse(event.data);
+        data = JSON.parse(data.message);
+        console.log(data.sdp);
+        peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp)).then(function () {
+            peerConnection.createAnswer().then(createdDescription).catch(errorHandler);
+        }).catch(errorHandler);
+
+    }
+	function createdDescription(description) {
+        console.log("got description wait");
+        peerConnection.setLocalDescription(description).then(function () {
+            signallingChannel_send(JSON.stringify({'sdp': peerConnection.localDescription}), "{{name}}", 'response');
+
+        }).catch(errorHandler);
+    }
+
+
+    signalingChannel.addEventListener('ice1', gotIce);
+
+    function gotIce(event) {
+        var data = JSON.parse(event.data);
+        data = JSON.parse(data.message);
+        peerConnection.addIceCandidate(new RTCIceCandidate(data.ice)).catch(errorHandler);
+    }
+
+
+    function errorHandler(error) {
+        console.log(error);
+    }
+
+    
+</script>
+
+</body>
+</html>

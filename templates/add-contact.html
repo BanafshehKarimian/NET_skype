@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+
+
+
+ <html >
+ 
+<head>
+     <script src="static/script.js"> </script>
+ 
+ </head>
+
+ <body>
+<table>
+    {% for c in contacts %}
+        <td>{{c}}</td>
+	{% endfor %}
+</table>
+ 
+     <div id="logoutform">
+ 
+        
+        	<h2 class="form-signin-heading"> Log out</h2>
+            
+	     <input type="email" name="username" id="username" class="form-control" placeholder="Your name" required autofocus>
+             <button type="button" onclick="logOut()">Log out </button>
+      
+     </div>
+
+     <div id="addcontactform">
+ 
+        
+        	<h2 class="form-signin-heading"> Add contact </h2>
+             <input type="email" name="username" id="contatname" class="form-control" placeholder="Contact name" required autofocus>
+             <button type="button" onclick="addContact()">Add </button>
+      
+     </div>
+
+     <div id="connectcontactform">
+ 
+        
+        	<h2 class="form-signin-heading"> Connect to contact </h2>
+             <input type="email" name="username" id="contatname1" class="form-control" placeholder="Contact name" required autofocus>
+             <input type="email" name="room_id1" id="room_id1" class="form-control" placeholder="Room Id" required autofocus>
+             <button type="button" onclick="connectContact()">Connect </button>
+      
+     </div>
+     <div id="acceptcontactform">
+ 
+        
+             <h2 class="form-signin-heading"> Accept contact </h2>
+             <input type="email" name="username" id="contatname2" class="form-control" placeholder="Contact name" required autofocus>
+             <input type="email" name="room_id2" id="room_id2" class="form-control" placeholder="Room Id" required autofocus>
+             <button type="button" onclick="acceptContact()">Accept </button>
+      
+     </div>
+      <h2 class="form-signin-heading"> Video Chat </h2>
+            <div id="acceptcontactform">
+<input id ="id_create" type="text" >
+<button onclick="createVideo()">creat chat</button>
+<p></p>
+<input id ="id_join" type="text">
+<button onclick="joinVideo()">join chat</button>
+</div>
+
+<script>
+  function createVideo() {
+    var name = document.getElementById("id_create").value;
+    window.location="/create/"+name;
+  }
+  function joinVideo() {
+    var name = document.getElementById("id_join").value;
+    window.location="/join/"+name;
+ }
+</script>
+
+
+
+ </body>
+
+ </html>
+
+
